@@ -41,7 +41,9 @@ public class IndexCreator {
 	}
     }
 
-    private static void createDoc (IndexWriter writer, Restaurant r) throws IOException {
+    private static void createDoc (IndexWriter writer, Restaurant r)
+	throws IOException {
+	
 	Document doc = new Document ();
 	Field cityField = new TextField ("city", (String) r.getField ("city"),
 					 Field.Store.YES);
@@ -50,19 +52,24 @@ public class IndexCreator {
 	Field addressField = new TextField ("address",
 					    (String) r.getField ("address"),
 					    Field.Store.YES);
-	Field starsField = new StoredField ("stars",
-					    (Double) r.getField ("stars"));
+	Field starsField = new StoredField ("stars", (Double) r.getField ("stars"));
 	Field reviewCountField = new StoredField ("reviewCount",
 						  (Long) r.getField ("reviewCount"));
-	Field neighborhoodField =
-	    new TextField ("neighborhood", (String) r.getField ("neighborhood"),
-			   Field.Store.YES);
-	Field stateField =
-	    new TextField ("state", (String) r.getField ("state"), Field.Store.YES);
-	Field postalCodeField =
-	    new TextField ("postalCode", (String) r.getField ("state"),
-			   Field.Store.YES);
-	
+	Field neighborhoodField = new TextField ("neighborhood",
+						 (String) r.getField ("neighborhood"),
+						 Field.Store.YES);
+	Field stateField = new TextField ("state", (String) r.getField ("state"),
+					  Field.Store.YES);
+	Field postalCodeField = new TextField ("postalCode",
+					       (String) r.getField ("postalCode"),
+					       Field.Store.YES);
+	Field longitudeField = new TextField ("longitude",
+					      (String) r.getField ("longitude"),
+					      Field.Store.NO);
+	Field latitudeField = new TextField ("latitude",
+					     (String) r.getField ("latitude"),
+					     Field.Store.NO);
+
 	doc.add (cityField);
 	doc.add (nameField);
 	doc.add (addressField);
@@ -71,6 +78,8 @@ public class IndexCreator {
 	doc.add (neighborhoodField);
 	doc.add (stateField);
 	doc.add (postalCodeField);
+	doc.add (longitudeField);
+	doc.add (latitudeField);
 	
 	writer.addDocument (doc);
     }

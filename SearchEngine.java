@@ -19,15 +19,18 @@ import java.io.IOException;
 
 public class SearchEngine {
     static ArrayList<Restaurant> restaurants;
+    static ArrayList<Review> reviews;
     static String index = "index";
-    static String city = "Oregon";
-    static String field = "city";
+    static String location = null;
+    static String searchField = null;
     static int numResults = 10;
 
     public static void main (String[] args) {
 	boolean createIndex = false;
 	boolean searchRestaurant = false;
 	String location = null;
+	String searchString = null;
+	boolean locationBased = false;
 	
 	for (int i=0; i<args.length; i++) {
 	    if ("-index".equals (args[i])) {
@@ -35,13 +38,30 @@ public class SearchEngine {
 		i++;
 	    } else if ("-restaurant".equals (args[i])) {
 		searchRestaurant = true;
-		location = args[i+1];
+		i++;
+		if ("--city".equals (args[i])) {
+		    searchField = "city";
+		    location = args[i+1];
+		} else if ("--address".equals (args[i])) {
+		    searchField = "address";
+		    location = args[i+1];
+		} else if ("--neighborhood".equals (args[i])) {
+		    searchField = "neighborhood";
+		    location = args[i+1];
+		} else if ("--state".equals (args[i])) {
+		    searchField = "state";
+		    location = args[i+1];
+		} else if ("--postal".equals (args[i])) {
+		    searchField = "postalCode";
+		    location = args[i+1];
+		}
 	    }
 	}
 	
 	if (createIndex) {
 	    JsonParser parser = new JsonParser ();
 	    restaurants = parser.getRestaurantsFromJson ();
+	    reviews = parser.getRestaurantReviewsFromJson (restaurants);
 
 	    IndexCreator index = new IndexCreator ();
 	    index.createDocs (restaurants);
@@ -52,20 +72,21 @@ public class SearchEngine {
     }
 
 
-    public static void searchRestaurant (String searchField) {
-	prepareSearcher (searchField);
+    public static void searchRestaurant (String location) {
+	prepareSearcher (location);
     }
     
 	    
-    private static void prepareSearcher (String city) {
+    private static void prepareSearcher (String queryString) {
 	try {
-	    IndexReader reader = DirectoryReader.open (FSDirectory.open (Paths.get (index)));
+	    IndexReader reader =
+		DirectoryReader.open (FSDirectory.open (Paths.get (index)));
 	    IndexSearcher searcher = new IndexSearcher (reader);
 	    Analyzer analyzer = new StandardAnalyzer ();
 
-	    QueryParser parser = new QueryParser (field, analyzer);
-	    Query query = parser.parse(city);
-	    System.out.println("Searching for: " + query.toString(field));
+	    QueryParser parser = new QueryParser (searchField, analyzer);
+	    Query query = parser.parse(queryString);
+	    System.out.println("Searching for: " + query.toString(queryString));
 
 	    doSearch (searcher, query, numResults);
 
@@ -76,7 +97,8 @@ public class SearchEngine {
 	}
     }
 
-    private static void doSearch (IndexSearcher searcher, Query query, int numResults)
+    private static void doSearch (IndexSearcher searcher, Query query,
+				  int numResults)
 	throws IOException {
 	TopDocs results = searcher.search (query, numResults);
 	ScoreDoc[] hits = results.scoreDocs;
@@ -97,11 +119,14 @@ public class SearchEngine {
 		System.out.print (name);
 	    String address = doc.get ("address");
 	    if (address != null)
-		System.out.print (", " + address);
+		System.out.print (", Addr: " + address);
+	    String neighborhood = doc.get ("neighborhood");
+	    if (! neighborhood.equals (""))
+		System.out.print (", " + neighborhood);
+	    System.out.print (", " + doc.get ("postalCode"));
 	    System.out.print (", " + doc.get ("city"));
 	    System.out.print (", " + doc.get ("stars") + "\u2605");
-	    System.out.println (", Reviews: " + doc.get ("reviewCount"));
-	    
+	    System.out.println (" " + doc.get ("reviewCount") + " reviews");
 	}
     }
 }
